@@ -1,0 +1,17 @@
+body {
+    margin: 0;
+}
+
+#game{
+    overflow-x: hidden;
+}
+
+#start{
+    height: 100vh;
+}
+
+@media (max-width: 400px) {
+   body{
+    /* background-color: red; */
+   }
+}
