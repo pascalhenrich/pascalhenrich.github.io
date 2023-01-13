@@ -93,6 +93,7 @@ function main(){
     video = document.createElement("video");
     video.id = "video";
     video.setAttribute("autoplay", "1");  
+    video.setAttribute("playsinline", "1");
     // Get video stream
     navigator.mediaDevices.getUserMedia({video: true})
     .then(function (stream){
