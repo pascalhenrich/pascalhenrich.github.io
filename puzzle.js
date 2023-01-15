@@ -1,8 +1,15 @@
-var canvas = document.querySelector('#puzzle');
-var ctx = canvas.getContext('2d', { willReadFrequently: true });
+var body;
+var startDiv;
+var canvas;
+var ctx;
 var video;
+var usermedia;
 var operationMode;
-var started;
+var startDate;
+var endDate;
+var username;
+var highScoreList;
+var finished;
 var originalVideoWidth;
 var originalVideoHeigth;
 var canvasVideoWidth;
@@ -16,8 +23,18 @@ var canvasRowHeight;
 var placementGrid;
 var puzzlePieces;
 var piece;
+var initMovePosition;
 var offsetX;
 var offsetY;
+var lastTouch;
+class Score {
+    name;
+    time;
+    constructor(name, time) {
+        this.name = name;
+        this.time = time;
+    }
+}
 class PuzzlePiece {
     column;
     row;
@@ -27,17 +44,17 @@ class PuzzlePiece {
         this.column = column;
         this.row = row;
         this.originPostion = new Position(originColumnWidth * this.column, originRowHeight * this.row);
-        this.initCanvasPosition();
+        this.randomizeCanvasPosition();
     }
     draw() {
         ctx.drawImage(video, this.originPostion.x, this.originPostion.y, originColumnWidth, originRowHeight, this.canvasPosition.x, this.canvasPosition.y, canvasColumnWidth, canvasRowHeight);
         ctx.beginPath();
-        ctx.lineWidth = 4;
+        ctx.lineWidth = 2;
         ctx.rect(this.canvasPosition.x, this.canvasPosition.y, canvasColumnWidth, canvasRowHeight);
         ctx.stroke();
     }
-    snap(event) {
-        let position = findNearesGridPlace(event);
+    snap(piecePosition) {
+        let position = findNearesGridPlace(piecePosition);
         if (position != null) {
             this.canvasPosition = position;
         }
@@ -51,11 +68,8 @@ class PuzzlePiece {
             return false;
         }
     }
-    updateCanvasPosition() {
+    randomizeCanvasPosition() {
         this.canvasPosition = randomPosition();
-    }
-    initCanvasPosition() {
-        this.canvasPosition = new Position(placementGrid.x + this.column * canvasColumnWidth, placementGrid.y + this.row * canvasRowHeight);
     }
 }
 class Position {
@@ -71,24 +85,179 @@ var Mode;
     Mode[Mode["Desktop"] = 0] = "Desktop";
     Mode[Mode["Mobile"] = 1] = "Mobile";
 })(Mode || (Mode = {}));
+/**
+ * Is called when site is loaded
+ */
+function onLoadStart() {
+    initData();
+    body = document.body;
+    startDiv = document.createElement("div");
+    startDiv.id = "startDiv";
+    body.appendChild(startDiv);
+    createTable();
+    createStartButton();
+}
+/**
+ * Creates a div with a button which starts the puzzle and an input field
+ */
+function createStartButton() {
+    let div = document.createElement("div");
+    let divInput = document.createElement("div");
+    let form = document.createElement("form");
+    let input = document.createElement("input");
+    let label = document.createElement("label");
+    let br = document.createElement("br");
+    label.htmlFor = "fname";
+    label.innerHTML = "Name:";
+    input.name = "fname";
+    input.type = "text";
+    form.appendChild(label);
+    form.appendChild(br);
+    form.appendChild(input);
+    divInput.appendChild(form);
+    divInput.id = "inputDiv";
+    let divButton = document.createElement("div");
+    divButton.id = "buttonDiv";
+    let button = document.createElement("button");
+    button.innerHTML = "Start!";
+    divButton.appendChild(button);
+    div.appendChild(divButton);
+    div.appendChild(divInput);
+    div.id = "left";
+    startDiv.appendChild(div);
+    body.appendChild(startDiv);
+    button.addEventListener("click", (event) => {
+        if (input.value != "") {
+            username = input.value;
+            startDiv.parentNode.removeChild(startDiv);
+            startDiv = null;
+            start();
+        }
+        else {
+            alert("Kein kültiger Nutzername!");
+        }
+    });
+}
+/**
+ * Creates highscore table
+ */
+function createTable() {
+    let div = document.createElement("div");
+    let divTable = document.createElement("div");
+    let divText = document.createElement("div");
+    let h1 = document.createElement("h1");
+    h1.innerHTML = "HighScore";
+    divText.id = "textDiv";
+    divText.appendChild(h1);
+    divTable.id = "tableDiv";
+    let table = document.createElement("table");
+    let headerRow = document.createElement("tr");
+    let headers = ["Name", "Score"];
+    console.log(headers);
+    headers.forEach((text) => {
+        let header = document.createElement("th");
+        header.innerHTML = text;
+        headerRow.appendChild(header);
+    });
+    table.appendChild(headerRow);
+    highScoreList.sort((a, b) => {
+        if (a.time < b.time) {
+            return -1;
+        }
+        else if (a.time > b.time) {
+            return 1;
+        }
+        else {
+            return 0;
+        }
+    });
+    for (let i = 0; i < 10; i++) {
+        let row = document.createElement("tr");
+        let nameCell = document.createElement("td");
+        let scoreCell = document.createElement("td");
+        nameCell.innerHTML = highScoreList[i].name;
+        scoreCell.innerHTML = highScoreList[i].time.toString();
+        row.appendChild(nameCell);
+        row.appendChild(scoreCell);
+        table.appendChild(row);
+    }
+    divTable.appendChild(table);
+    div.appendChild(divText);
+    div.appendChild(divTable);
+    div.id = "right";
+    startDiv.appendChild(div);
+    body.appendChild(startDiv);
+}
+/**
+ * Loads old highscore data
+ */
+function initData() {
+    highScoreList = [
+        {
+            "name": "Admin",
+            "time": 1337
+        },
+        {
+            "name": "User1",
+            "time": 769494
+        },
+        {
+            "name": "User2",
+            "time": 399877
+        },
+        {
+            "name": "User3",
+            "time": 234983
+        },
+        {
+            "name": "User4",
+            "time": 890983
+        },
+        {
+            "name": "User5",
+            "time": 768689
+        },
+        {
+            "name": "User6",
+            "time": 856489
+        },
+        {
+            "name": "User7",
+            "time": 489645
+        },
+        {
+            "name": "User8",
+            "time": 314894
+        },
+        {
+            "name": "User9",
+            "time": 654489
+        }
+    ];
+}
+/**
+ * Starts the puzzle environment
+ */
+function start() {
+    finished = false,
+        startDate = Date.now();
+    setupTry();
+    main();
+}
+/**
+ * Init main game loop
+ */
 function main() {
-    // Init empty piece array
-    puzzlePieces = [];
-    // Setup video
-    video = document.createElement("video");
-    video.id = "video";
-    video.setAttribute("autoplay", "");
-    video.setAttribute("playsinline", "");
-    // Get video stream
-    navigator.mediaDevices.getUserMedia({ video: true })
+    usermedia = navigator.mediaDevices.getUserMedia({ video: true })
         .then(function (stream) {
         video.srcObject = stream;
         originalVideoWidth = stream.getTracks()[0].getSettings().width;
         originalVideoHeigth = stream.getTracks()[0].getSettings().height;
-        setupValues();
+        setupDimensions();
         setOperationMode();
         video.onloadeddata = () => {
             initGrid();
+            shufflePieces();
             update();
             initListener();
         };
@@ -97,8 +266,39 @@ function main() {
         console.log("Error!");
     });
 }
-function setupValues() {
-    // Canvas
+/**
+ * Needs to get called before every try
+ */
+function setupTry() {
+    puzzlePieces = [];
+    createCanvas();
+}
+/**
+ * Creates a canvas with video
+ */
+function createCanvas() {
+    canvas = document.createElement("canvas");
+    canvas.id = "game";
+    body.appendChild(canvas);
+    ctx = canvas.getContext('2d', { willReadFrequently: true });
+    video = document.createElement("video");
+    video.id = "video";
+    video.setAttribute("autoplay", "");
+    video.setAttribute("playsinline", "");
+}
+/**
+ * Shuffles the pieces
+ */
+function shufflePieces() {
+    for (let i = 0; i < puzzlePieces.length; i++) {
+        puzzlePieces[i].randomizeCanvasPosition();
+    }
+}
+/**
+ * Sets the dimensions
+ */
+function setupDimensions() {
+    // Set canvas dimensions
     canvas.width = window.innerWidth;
     canvas.height = window.innerHeight;
     // Set video dimensions
@@ -115,6 +315,9 @@ function setupValues() {
     //
     placementGrid = new Position(canvas.width / 2 - canvasVideoWidth / 2, canvas.height / 2 - canvasVideoHeight / 2);
 }
+/**
+ * Initialize the puzzle pieces
+ */
 function initGrid() {
     for (let i = 0; i < columns; i++) {
         for (let j = 0; j < rows; j++) {
@@ -122,20 +325,41 @@ function initGrid() {
         }
     }
 }
+/**
+ * Updates the frame and checks if finished
+ */
 function update() {
-    if (checkAllInCorrectPosition()) {
-        console.log("fertig");
+    if (!finished) {
+        if (checkAllInCorrectPosition()) {
+            endDate = Date.now();
+            finished = true;
+            highScoreList.push(new Score(username, endDate - startDate));
+            canvas.parentNode.removeChild(canvas);
+            usermedia = null;
+            startDiv = document.createElement("div");
+            startDiv.id = "startDiv";
+            body.appendChild(startDiv);
+            createTable();
+            createStartButton();
+            alert("Geschafft! Deine Zeit war: " + (endDate - startDate) / 1000 + "s");
+        }
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        drawBackground();
+        drawForeground();
+        window.requestAnimationFrame(update);
     }
-    ctx.clearRect(0, 0, canvas.width, canvas.height);
-    drawBackground();
-    drawForeground();
-    window.requestAnimationFrame(update);
 }
+/**
+ * Draw puzzle pieces
+ */
 function drawForeground() {
     for (let i = 0; i < puzzlePieces.length; i++) {
         puzzlePieces[i].draw();
     }
 }
+/**
+ * Draw grid to place
+ */
 function drawBackground() {
     ctx.globalAlpha = 0.2;
     ctx.beginPath();
@@ -148,39 +372,66 @@ function drawBackground() {
     ctx.stroke();
     ctx.globalAlpha = 1;
 }
+/**
+ * Initialize eventlistener
+ */
 function initListener() {
-    addEventListener('mousedown', (event) => {
-        piece = getPieceOutOfGrid(event.x, event.y);
+    addEventListener("mousedown", (event) => {
+        piece = getPieceOutOfGrid(new Position(event.x, event.y));
         if (piece != null) {
             offsetX = (event.x - piece.canvasPosition.x);
             offsetY = (event.y - piece.canvasPosition.y);
         }
     });
-    addEventListener('mousemove', (event) => {
+    addEventListener("mousemove", (event) => {
         if (piece != null) {
             piece.canvasPosition.x = event.x - offsetX;
             piece.canvasPosition.y = event.y - offsetY;
         }
     });
-    addEventListener('mouseup', (event) => {
+    addEventListener("mouseup", (event) => {
         if (piece != null) {
-            piece.snap(event);
+            piece.snap(new Position(event.x, event.y));
             piece = null;
         }
     });
-    addEventListener('resize', (event => {
-        setupValues();
-        setOperationMode();
-        for (let i = 0; i < puzzlePieces.length; i++) {
-            if (started) {
-                puzzlePieces[i].updateCanvasPosition();
-            }
-            else {
-                puzzlePieces[i].initCanvasPosition();
-            }
+    addEventListener("touchstart", (event) => {
+        piece = getPieceOutOfGrid(new Position(event.touches[0].clientX, event.touches[0].clientY));
+        if (piece != null) {
+            offsetX = (event.touches[0].clientX - piece.canvasPosition.x);
+            offsetY = (event.touches[0].clientY - piece.canvasPosition.y);
         }
-    }));
+    });
+    addEventListener("touchmove", (event) => {
+        if (piece != null) {
+            piece.canvasPosition = new Position(event.touches[0].clientX - offsetX, event.touches[0].clientY - offsetY);
+            lastTouch = new Position(event.touches[0].clientX, event.touches[0].clientY);
+        }
+    });
+    addEventListener("touchend", (event) => {
+        console.log(event);
+        if (piece != null) {
+            piece.snap(lastTouch);
+            piece = null;
+        }
+    });
+    addEventListener("resize", (event) => {
+        setupDimensions();
+        setOperationMode();
+        canvas.parentNode.removeChild(canvas);
+        canvas = null;
+        usermedia = null;
+        startDiv = document.createElement("div");
+        startDiv.id = "startDiv";
+        body.appendChild(startDiv);
+        createTable();
+        createStartButton();
+        alert("Das Verändern der Fenstergröße hat Sie bestimmt Zeit gekostet. Starten Sie lieber neu!");
+    });
 }
+/**
+ * Sets operation mode
+ */
 function setOperationMode() {
     if (canvasColumnWidth + 10 >= placementGrid.x || canvas.width <= 1000) {
         operationMode = Mode.Mobile;
@@ -189,18 +440,28 @@ function setOperationMode() {
         operationMode = Mode.Desktop;
     }
 }
-function getPieceOutOfGrid(x, y) {
+/**
+ * Gets the piece on top of a stack at the position
+ * @param x x-coordinate
+ * @param y y-coordinate
+ * @returns PuzzlePiece at position
+ */
+function getPieceOutOfGrid(mousePosition) {
     for (let i = puzzlePieces.length - 1; i >= 0; i--) {
         let areaX = puzzlePieces[i].canvasPosition.x + canvasColumnWidth;
         let areaY = puzzlePieces[i].canvasPosition.y + canvasRowHeight;
-        if (x >= puzzlePieces[i].canvasPosition.x && x <= areaX && y >= puzzlePieces[i].canvasPosition.y && y <= areaY) {
+        if (mousePosition.x >= puzzlePieces[i].canvasPosition.x && mousePosition.x <= areaX && mousePosition.y >= puzzlePieces[i].canvasPosition.y && mousePosition.y <= areaY) {
             return puzzlePieces[i];
         }
     }
     return null;
 }
-function findNearesGridPlace(event) {
-    let mousePosition = new Position(event.x, event.y);
+/**
+ * Searches for the neares grid place for position
+ * @param event mouse event
+ * @returns Position
+ */
+function findNearesGridPlace(mousePosition) {
     if (mousePosition.x >= placementGrid.x
         && mousePosition.x < placementGrid.x + canvasVideoWidth
         && mousePosition.y >= placementGrid.y
@@ -211,6 +472,10 @@ function findNearesGridPlace(event) {
     }
     return null;
 }
+/**
+ * Checks if all pieces are in the correct postion
+ * @returns true if all in correct position
+ */
 function checkAllInCorrectPosition() {
     let checkArray = [];
     for (let i = 0; i < puzzlePieces.length; i++) {
@@ -218,6 +483,10 @@ function checkAllInCorrectPosition() {
     }
     return !checkArray.includes(false);
 }
+/**
+ * Returns a random position for a mode
+ * @returns random postion
+ */
 function randomPosition() {
     let site = Math.round(Math.random());
     if (operationMode == Mode.Desktop) {
@@ -236,11 +505,4 @@ function randomPosition() {
             return new Position(Math.random() * (canvas.width - canvasColumnWidth), placementGrid.y + canvasVideoHeight + Math.random() * (canvas.height - placementGrid.y - canvasVideoHeight - canvasRowHeight));
         }
     }
-}
-function start() {
-    started = true;
-    for (let i = 0; i < puzzlePieces.length; i++) {
-        puzzlePieces[i].updateCanvasPosition();
-    }
-    canvas.scrollIntoView({ block: "start", inline: "nearest", behavior: "smooth" });
 }

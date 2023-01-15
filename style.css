@@ -1,17 +1,96 @@
 body {
     margin: 0;
+    overflow: hidden;
+    background-color: #E1D89F;
+    font-size: 16px;
 }
 
 #game{
-    overflow-x: hidden;
+    overflow: hidden;
 }
 
-#start{
-    height: 100vh;
+table, th, td {
+    border: 1px solid;
 }
 
-@media (max-width: 400px) {
-   body{
-    /* background-color: red; */
-   }
+th, td {
+    padding: 15px;
+    text-align: center;
+}
+
+#startDiv{
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+}
+
+#left{
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: space-evenly;
+    height: 20vh;
+}
+
+#right{
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: space-evenly;
+    height: 80vh;
+}
+
+#buttonDiv{
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+#inputDiv{
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+#textDiv{
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+#tableDiv{
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+button{
+    background-color: #4CAF50; /* Green */
+    width: 200px;
+    height: 35px;
+    border: none;
+    color: white;
+    padding: 0px;
+    text-align: center;
+    text-decoration: none;
+    display: inline-block;
+}
+
+@media (max-height: 850px) {
+    body{
+        font-size: 14px;
+    }
+    th, td {
+        padding: 10px;
+    }
+}
+
+@media (max-height: 650px) {
+    body{
+        font-size: 12px;
+    }
+    th, td {
+        padding: 5px;
+    }
 }
